@@ -1,0 +1,44 @@
+﻿@page "/login"
+@using Models
+ 
+<div class="container">
+    <div class="row py-5">
+        <div class="col-3"></div>
+        <div class="col-5">
+
+            <div class="card">
+                <h4 class="card-header bg-light">Login</h4>
+
+                <div class="card-body">
+                    <EditForm Model="@loginRequest">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+                        <div class="form-group">
+                            <label for="email">Email Address:</label>
+                            <InputText id="email" name="email" @bind-Value="loginRequest.Email" class="form-control" placeholder="Email Address" />
+                        </div>
+                        <div class="form-group">
+                            <label for="name">Name:</label>
+                            <InputText id="name" name="name" @bind-Value="loginRequest.Name" class="form-control" placeholder="Name" />
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password:</label>
+                            <InputText type="password" id="password" name="password" @bind-Value="loginRequest.Password" class="form-control" placeholder="Password" />
+                        </div>
+                        <a class="card-link pb-2" href="">Forget Password</a><br/>
+                        <button type="submit" class="btn btn-primary">Login</button><a href="/signup" class="card-link px-2">Sign Up</a>                        
+                    </EditForm>
+                </div>
+
+            </div>
+
+        </div>
+        <div class="col-4"></div>
+    </div>
+
+</div>
+
+
+@code {
+    private LoginRequest loginRequest = new LoginRequest();
+}

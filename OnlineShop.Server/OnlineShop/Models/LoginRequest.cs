@@ -8,9 +8,6 @@ namespace OnlineShop.Models
         [EmailAddress(ErrorMessage = "Please enter a valid email.")]
         public string Email { get; set; }
 
-        [Required(AllowEmptyStrings = false, ErrorMessage = "Enter a name.")]        
-        public string Name { get; set; }
-
         [Required(AllowEmptyStrings = false)]
         [MinLength(8, ErrorMessage = "Min. password length is 8.")]
         [MaxLength(32, ErrorMessage = "Max. password length is 32")]

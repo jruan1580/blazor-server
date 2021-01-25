@@ -1,36 +1,87 @@
 ﻿@page "/login"
 @using Models
+@inject IUserGrpcService UserGrpcService;
  
 <div class="container">
     <div class="row py-5">
         <div class="col-3"></div>
         <div class="col-5">
+            @if (!isSignUp)
+            {
+                <div class="card">
+                    <h4 class="card-header bg-light">Login</h4>
 
-            <div class="card">
-                <h4 class="card-header bg-light">Login</h4>
+                    <div class="card-body">
+                        <EditForm Model="@loginRequest">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <div class="form-group">
+                                <label for="email">Email Address:</label>
+                                <InputText id="email" name="email" @bind-Value="loginRequest.Email" class="form-control" placeholder="Email Address" />
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password:</label>
+                                <InputText type="password" id="password" name="password" @bind-Value="loginRequest.Password" class="form-control" placeholder="Password" />
+                                <div class="mt-2">
+                                    <a class="card-link" href="" @onclick="SwitchToSignup" @onclick:preventDefault>Dont' have account? Sign Up!</a><br />
+                                    <a class="card-link" href="">Forget Password</a>
+                                </div>                               
+                            </div>
 
-                <div class="card-body">
-                    <EditForm Model="@loginRequest">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary />
-                        <div class="form-group">
-                            <label for="email">Email Address:</label>
-                            <InputText id="email" name="email" @bind-Value="loginRequest.Email" class="form-control" placeholder="Email Address" />
-                        </div>
-                        <div class="form-group">
-                            <label for="name">Name:</label>
-                            <InputText id="name" name="name" @bind-Value="loginRequest.Name" class="form-control" placeholder="Name" />
-                        </div>
-                        <div class="form-group">
-                            <label for="password">Password:</label>
-                            <InputText type="password" id="password" name="password" @bind-Value="loginRequest.Password" class="form-control" placeholder="Password" />
-                        </div>
-                        <a class="card-link pb-2" href="">Forget Password</a><br/>
-                        <button type="submit" class="btn btn-primary">Login</button><a href="/signup" class="card-link px-2">Sign Up</a>                        
-                    </EditForm>
+                            <button type="submit" class="btn btn-primary" disabled="@(!context.Validate())">Login</button>
+                        </EditForm>
+                    </div>
+
                 </div>
+            }
+            else
+            {
+                <div class="card">
+                    <h4 class="card-header bg-light">Login</h4>
 
-            </div>
+                    <div class="card-body">
+                        <EditForm Model="@signupRequest" OnValidSubmit="SignUp">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            @if (!string.IsNullOrEmpty(signupMessage))
+                            {
+                                @if (signUpSuccess)
+                                {
+                                    <div class="alert alert-success">
+                                        @signupMessage
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-danger">
+                                        @signupMessage
+                                    </div>
+                                }
+                            }
+                      
+                            <div class="form-group">
+                                <label for="name">Name:</label>
+                                <InputText id="name" name="name" @bind-Value="signupRequest.Name" class="form-control" placeholder="Name" />
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address:</label>
+                                <InputText id="email" name="email" @bind-Value="signupRequest.Email" class="form-control" placeholder="Email Address" />
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password:</label>
+                                <InputText type="password" id="password" name="password" @bind-Value="signupRequest.Password" class="form-control" placeholder="Password" />
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm Password:</label>
+                                <InputText type="password" id="confirmPassword" name="confirmPassword" @bind-Value="signupRequest.ConfirmPassword" class="form-control" placeholder="Confirm Password" />
+                            </div>
+                            <button type="submit" class="btn btn-primary" disabled="@(!context.Validate())">Sign Up</button>
+                            <button type="button" class="btn btn-danger" @onclick="SwitchToLogin">Cancel</button>
+                        </EditForm>
+                    </div>
+                </div>
+            }
+
 
         </div>
         <div class="col-4"></div>
@@ -41,4 +92,32 @@
 
 @code {
     private LoginRequest loginRequest = new LoginRequest();
+    private SignupRequest signupRequest = new SignupRequest();
+
+    private bool isSignUp = false;
+    private bool signUpSuccess = false;
+    private string signupMessage = null;
+
+    private void SwitchToSignup()
+    {
+        isSignUp = true;
+    }
+
+    private void SwitchToLogin()
+    {
+        isSignUp = false;
+    }
+
+    private async Task SignUp()
+    {
+        try
+        {
+            signupMessage = null;
+            await UserGrpcService.CreateUser(signupRequest);
+        }
+        catch(Exception ex)
+        {
+            signupMessage = ex.Message;
+        }
+    }
 }

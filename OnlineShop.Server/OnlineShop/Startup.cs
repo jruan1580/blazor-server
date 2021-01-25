@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Hosting;
@@ -30,7 +31,9 @@ namespace OnlineShop
             services.AddRazorPages();
             services.AddServerSideBlazor();            
             services.AddSingleton<WeatherForecastService>();
+            services.AddSingleton(GetUserClient());
             services.AddTransient<ILocalStorageService, LocalStorageService>();
+            services.AddTransient<IUserGrpcService, UserGrpcService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -57,6 +60,15 @@ namespace OnlineShop
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
             });
+        }
+
+        private User.Grpc.User.UserClient GetUserClient()
+        {
+            var userUrl = Configuration.GetSection("Grpc:UserService").Value;
+
+            var channel = GrpcChannel.ForAddress(userUrl);
+
+            return new User.Grpc.User.UserClient(channel);
         }
     }
 }

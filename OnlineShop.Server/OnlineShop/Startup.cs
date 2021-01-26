@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
@@ -64,9 +65,13 @@ namespace OnlineShop
 
         private User.Grpc.User.UserClient GetUserClient()
         {
+            var httpHandler = new HttpClientHandler();
+            // Return `true` to allow certificates that are untrusted/invalid
+            httpHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+
             var userUrl = Configuration.GetSection("Grpc:UserService").Value;
 
-            var channel = GrpcChannel.ForAddress(userUrl);
+            var channel = GrpcChannel.ForAddress(userUrl, new GrpcChannelOptions { HttpHandler = httpHandler });
 
             return new User.Grpc.User.UserClient(channel);
         }

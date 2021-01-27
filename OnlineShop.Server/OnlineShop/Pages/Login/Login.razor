@@ -90,7 +90,8 @@
                                 @if (signUpSuccess)
                                 {
                                     <div class="alert alert-success">
-                                        @signupMessage
+                                        <p>@signupMessage</p>
+                                        <p>Click <a href="" @onclick="SwitchToLogin" @onclick:preventDefault>here</a> to return to login page.</p>
                                     </div>
                                 }
                                 else
@@ -156,6 +157,9 @@
     {
         isSignUp = false;
         signupMessage = null;
+        signUpSuccess = false;
+
+        signupRequest = new SignupRequest();
     }
 
     private void OpenModal()
@@ -179,6 +183,16 @@
             OpenModal();
 
             signupMessage = null;
+            signUpSuccess = false;
+
+            if (signupRequest.Password != signupRequest.ConfirmPassword)
+            {
+                signUpSuccess = false;
+                signupMessage = "Passwords do not match";
+                CloseModal();
+
+                return;
+            }
 
             await UserGrpcService.CreateUser(signupRequest);
 
@@ -186,6 +200,15 @@
 
             signupMessage = "Successfully created account.";
             signUpSuccess = true;
+
+            signupRequest = new SignupRequest();
+        }
+        catch(RpcException rpcEx)
+        {
+            signUpSuccess = false;
+            signupMessage = rpcEx.Status.Detail;
+
+            CloseModal();
         }
         catch (Exception ex)
         {

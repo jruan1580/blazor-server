@@ -1,6 +1,8 @@
 ﻿@page "/login"
-@using Models
+
 @inject IUserGrpcService UserGrpcService;
+@inject NavigationManager NavManager
+@inject LoginState LoginState
 
 @if (showBackdrop)
 {
@@ -48,10 +50,18 @@
                     <h4 class="card-header bg-light">Login</h4>
 
                     <div class="card-body">
-                        <EditForm Model="@loginRequest">
-                            <DataAnnotationsValidator />
-                            <ValidationSummary />
-                            @if (!string.IsNullOrEmpty(loginMessage))
+                        <EditForm Model="@loginRequest" OnValidSubmit="SignIn">
+                            @if (enableLoginValidation)
+                            {
+                                <DataAnnotationsValidator />
+                            }
+
+                            @if (!context.Validate())
+                            {
+                                <ValidationSummary />
+                            }
+
+                            @if (!string.IsNullOrEmpty(loginMessage) && context.Validate())
                             {
                                 <div class="alert alert-danger">
                                     @loginMessage
@@ -59,18 +69,18 @@
                             }
                             <div class="form-group">
                                 <label for="email">Email Address:</label>
-                                <InputText id="email" name="email" @bind-Value="loginRequest.Email" class="form-control" placeholder="Email Address" />
+                                <InputText id="email" name="email" @bind-Value="loginRequest.Email" class="form-control" placeholder="Email Address" @oninput="EnableLoginValidation" />
                             </div>
                             <div class="form-group">
                                 <label for="password">Password:</label>
-                                <InputText type="password" id="password" name="password" @bind-Value="loginRequest.Password" class="form-control" placeholder="Password" />
+                                <InputText type="password" id="password" name="password" @bind-Value="loginRequest.Password" class="form-control" placeholder="Password" @oninput="EnableLoginValidation" />
                                 <div class="mt-2">
                                     <a class="card-link" href="" @onclick="SwitchToSignup" @onclick:preventDefault>Dont' have account? Sign Up!</a><br />
                                     <a class="card-link" href="">Forget Password</a>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary" disabled="@(!context.Validate())">Login</button>
+                            <button type="submit" class="btn btn-primary" disabled="@(!context.Validate() || !context.IsModified())">Login</button>
                         </EditForm>
                     </div>
 
@@ -79,13 +89,23 @@
             else
             {
                 <div class="card">
-                    <h4 class="card-header bg-light">Login</h4>
+                    <h4 class="card-header bg-light">Sign Up</h4>
 
                     <div class="card-body">
                         <EditForm Model="@signupRequest" OnValidSubmit="SignUp">
-                            <DataAnnotationsValidator />
-                            <ValidationSummary />
-                            @if (!string.IsNullOrEmpty(signupMessage))
+                            @if (enableSignupValidation)
+                            {
+                                <DataAnnotationsValidator />
+                            }
+
+                            @if (!context.Validate())
+                            {
+                                <div class="alert alert-danger">
+                                    <ValidationSummary />
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(signupMessage) && context.Validate())
                             {
                                 @if (signUpSuccess)
                                 {
@@ -104,21 +124,21 @@
 
                             <div class="form-group">
                                 <label for="name">Name:</label>
-                                <InputText id="name" name="name" @bind-Value="signupRequest.Name" class="form-control" placeholder="Name" />
+                                <InputText id="name" name="name" @bind-Value="signupRequest.Name" class="form-control" placeholder="Name" @oninput="EnableSignupValidation" />
                             </div>
                             <div class="form-group">
                                 <label for="email">Email Address:</label>
-                                <InputText id="email" name="email" @bind-Value="signupRequest.Email" class="form-control" placeholder="Email Address" />
+                                <InputText id="email" name="email" @bind-Value="signupRequest.Email" class="form-control" placeholder="Email Address" @oninput="EnableSignupValidation" />
                             </div>
                             <div class="form-group">
                                 <label for="password">Password:</label>
-                                <InputText type="password" id="password" name="password" @bind-Value="signupRequest.Password" class="form-control" placeholder="Password" />
+                                <InputText type="password" id="password" name="password" @bind-Value="signupRequest.Password" class="form-control" placeholder="Password" @oninput="EnableSignupValidation" />
                             </div>
                             <div class="form-group">
                                 <label for="confirmPassword">Confirm Password:</label>
-                                <InputText type="password" id="confirmPassword" name="confirmPassword" @bind-Value="signupRequest.ConfirmPassword" class="form-control" placeholder="Confirm Password" />
+                                <InputText type="password" id="confirmPassword" name="confirmPassword" @bind-Value="signupRequest.ConfirmPassword" class="form-control" placeholder="Confirm Password" @oninput="EnableSignupValidation" />
                             </div>
-                            <button type="submit" class="btn btn-primary" disabled="@(!context.Validate())">Sign Up</button>
+                            <button type="submit" class="btn btn-primary" disabled="@(!context.Validate()|| !context.IsModified())">Sign Up</button>
                             <button type="button" class="btn btn-danger" @onclick="SwitchToLogin">Cancel</button>
                         </EditForm>
                     </div>
@@ -139,8 +159,10 @@
     private bool isSignUp = false;
     private bool signUpSuccess = false;
     private string signupMessage = null;
+    private bool enableSignupValidation = false;
 
     private string loginMessage = null;
+    private bool enableLoginValidation = false;
 
     private string modalDisplay = "none;";
     private string modalClass = "";
@@ -151,6 +173,9 @@
     {
         isSignUp = true;
         loginMessage = null;
+        enableLoginValidation = false;
+
+        loginRequest = new LoginRequest();
     }
 
     private void SwitchToLogin()
@@ -158,6 +183,7 @@
         isSignUp = false;
         signupMessage = null;
         signUpSuccess = false;
+        enableSignupValidation = false;
 
         signupRequest = new SignupRequest();
     }
@@ -176,46 +202,80 @@
         showBackdrop = false;
     }
 
-    private async Task SignUp()
+    private void EnableSignupValidation()
     {
+        signupMessage = null;
+        signUpSuccess = false;
+        enableSignupValidation = true;
+    }
+
+    private void EnableLoginValidation()
+    {
+        loginMessage = null;
+        enableLoginValidation = true;
+    }
+
+    private async Task SignIn()
+    {
+        OpenModal();
+
+        loginMessage = null;
+
         try
         {
-            OpenModal();
+            await UserGrpcService.Login(loginRequest);
+        }
+        catch (RpcException ex)
+        {
+            loginMessage = ex.Status.Detail;
+            CloseModal();
+            return;
+        }
 
-            signupMessage = null;
+        enableLoginValidation = false;
+        CloseModal();
+
+        LoginState.LoggedIn = true;
+
+        NavManager.NavigateTo("/counter");
+    }
+
+    private async Task SignUp()
+    {
+
+        OpenModal();
+
+        signupMessage = null;
+        signUpSuccess = false;
+
+        if (signupRequest.Password != signupRequest.ConfirmPassword)
+        {
             signUpSuccess = false;
-
-            if (signupRequest.Password != signupRequest.ConfirmPassword)
-            {
-                signUpSuccess = false;
-                signupMessage = "Passwords do not match";
-                CloseModal();
-
-                return;
-            }
-
-            await UserGrpcService.CreateUser(signupRequest);
-
+            signupMessage = "Passwords do not match";
             CloseModal();
 
-            signupMessage = "Successfully created account.";
-            signUpSuccess = true;
-
-            signupRequest = new SignupRequest();
+            return;
         }
-        catch(RpcException rpcEx)
+
+        try
+        {
+            await UserGrpcService.CreateUser(signupRequest);
+        }
+        catch (RpcException rpcEx)
         {
             signUpSuccess = false;
             signupMessage = rpcEx.Status.Detail;
 
             CloseModal();
+            return;
         }
-        catch (Exception ex)
-        {
-            signUpSuccess = false;
-            signupMessage = ex.Message;
 
-            CloseModal();
-        }
+        CloseModal();
+
+        signupMessage = "Successfully created account.";
+        signUpSuccess = true;
+
+        enableSignupValidation = false;
+        signupRequest = new SignupRequest();
     }
 }

@@ -32,6 +32,7 @@ namespace OnlineShop
             services.AddRazorPages();
             services.AddServerSideBlazor();            
             services.AddSingleton<WeatherForecastService>();
+            services.AddSingleton<LoginState>();
             services.AddSingleton(GetUserClient());
             services.AddTransient<ILocalStorageService, LocalStorageService>();
             services.AddTransient<IUserGrpcService, UserGrpcService>();

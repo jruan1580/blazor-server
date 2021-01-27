@@ -6,7 +6,7 @@ namespace OnlineShop.Services
 {
     public interface ILocalStorageService
     {
-        Task<T> GetItem<T>(string key);
+        Task<string> GetItem(string key);
         Task RemoveItem(string key);
         Task SetItem(string key, string value);
     }
@@ -19,7 +19,7 @@ namespace OnlineShop.Services
             _jsRunTime = jSRuntime;
         }
 
-        public async Task<T> GetItem<T>(string key)
+        public async Task<string> GetItem(string key)
         {
             var json = await _jsRunTime.InvokeAsync<string>("localStorage.getItem", key);
 
@@ -28,7 +28,7 @@ namespace OnlineShop.Services
                 return default;
             }
 
-            return JsonConvert.DeserializeObject<T>(json);
+            return json;
         }
 
         public async Task SetItem(string key, string value)

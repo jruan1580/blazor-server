@@ -7,15 +7,18 @@ namespace OnlineShop.Services
     public interface IUserGrpcService
     {
         Task CreateUser(SignupRequest request);
-        Task<Guid> Login(LoginRequest request);
+        Task Login(LoginRequest request);
     }
 
     public class UserGrpcService : IUserGrpcService
     {
         private readonly User.Grpc.User.UserClient _userClient;
-        public UserGrpcService(User.Grpc.User.UserClient userClient)
+        private readonly ILocalStorageService _localStorageService;
+
+        public UserGrpcService(User.Grpc.User.UserClient userClient, ILocalStorageService localStorageService)
         {
             _userClient = userClient;
+            _localStorageService = localStorageService;
         }
 
         public async Task CreateUser(SignupRequest request)
@@ -30,7 +33,7 @@ namespace OnlineShop.Services
             await _userClient.CreateUserAsync(new User.Grpc.CreateUserModel() { User = userModel, Password = request.Password });
         }
 
-        public async Task<Guid> Login(LoginRequest request)
+        public async Task Login(LoginRequest request)
         {
             await _userClient.LoginAsync(new User.Grpc.LoginModel() { Email = request.Email, Password = request.Password });
 
@@ -42,7 +45,7 @@ namespace OnlineShop.Services
                 throw new ArgumentException($"Unable to find user with email: {request.Email}");
             }
 
-            return Guid.Parse(user.Id);
+            await _localStorageService.SetItem("userId", user.Id);
         }
     }
 }

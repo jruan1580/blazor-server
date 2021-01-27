@@ -1,4 +1,6 @@
 ﻿@inject ILocalStorageService LocalStorageService;
+@inject LoginState LoginState
+@implements IDisposable
 
 <div class="top-row pl-4 navbar navbar-dark">
     <a class="navbar-brand" href="">OnlineShop</a>
@@ -7,7 +9,7 @@
     </button>
 </div>
 
-@if (loggedOn)
+@if (LoginState.LoggedIn)
 {
     <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
         <ul class="nav flex-column">
@@ -51,6 +53,7 @@ else
 
 @code {
     private bool collapseNavMenu = true;
+    private bool hasRendered = false;
     private bool loggedOn = false;
 
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
@@ -58,5 +61,17 @@ else
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        LoginState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        LoginState.OnChange -= StateHasChanged; ;
     }
 }

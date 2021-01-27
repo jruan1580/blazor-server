@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Grpc.Net.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Hosting;
@@ -10,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OnlineShop.Data;
+using OnlineShop.Services;
 
 namespace OnlineShop
 {
@@ -27,8 +30,12 @@ namespace OnlineShop
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
-            services.AddServerSideBlazor();
+            services.AddServerSideBlazor();            
             services.AddSingleton<WeatherForecastService>();
+            services.AddSingleton<LoginState>();
+            services.AddSingleton(GetUserClient());
+            services.AddTransient<ILocalStorageService, LocalStorageService>();
+            services.AddTransient<IUserGrpcService, UserGrpcService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -55,6 +62,19 @@ namespace OnlineShop
                 endpoints.MapBlazorHub();
                 endpoints.MapFallbackToPage("/_Host");
             });
+        }
+
+        private User.Grpc.User.UserClient GetUserClient()
+        {
+            var httpHandler = new HttpClientHandler();
+            // Return `true` to allow certificates that are untrusted/invalid
+            httpHandler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+
+            var userUrl = Configuration.GetSection("Grpc:UserService").Value;
+
+            var channel = GrpcChannel.ForAddress(userUrl, new GrpcChannelOptions { HttpHandler = httpHandler });
+
+            return new User.Grpc.User.UserClient(channel);
         }
     }
 }

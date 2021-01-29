@@ -1,0 +1,26 @@
+﻿@page "/logout"
+@inject LoginState LoginState
+@inject NavigationManager NavManager
+
+<LoadingModal></LoadingModal>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (!LoginState.LoggedIn)
+        {
+            NavManager.NavigateTo("/login");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        LoginState.LoggedIn = false;
+
+        NavManager.NavigateTo("/");
+    }
+}
